@@ -50,7 +50,7 @@ class User:
         if hashtag in self.hashtags:
             self.hashtags.remove(hashtag)
             return True
-       return False
+        return False
 
 
 
@@ -109,7 +109,7 @@ def threadExecute(c):
 
             elif state == unsubscribeFlag:
                 data = c.recv(length).decode("utf-8")
-                loggedUser.unsubscribe(data):
+                loggedUser.unsubscribe(data)
 
                 state = "standby"
                 
