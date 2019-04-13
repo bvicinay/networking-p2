@@ -2,11 +2,15 @@ import socket
 import sys
 
 
+print("Remember to Start Your Server")
+print("Enter Client Information Below")
+print("./ttweetcl <IP ADDRESS> <PORT NUMBER> <USERNAME>")
 
-args = sys.argv
+
+args = input()
 numArgs = len(args)
 
-if numArgs < 4:
+if numArgs < 4 or numArgs > 4:
     print("Error: Invalid parameters. Make sure you specify all parameters in the correct format.")
     exit()
 
@@ -40,13 +44,13 @@ size = len(username)
 
 sizeString = str(size)
 
-    if (size < 10) :
+if (size < 10) :
 
-        sizeString = "00" + sizeString
+    sizeString = "00" + sizeString
 
-    elif (size < 100) :
+elif (size < 100) :
 
-        sizeString = "0" + sizeString
+    sizeString = "0" + sizeString
 
 msg = bytes(sizeString + "user" + username)
 
@@ -67,7 +71,7 @@ else:
 def getCommand() :
 
     #get user command
-    userArgs = sys.argv
+    userArgs = input()
     commandArgs = userArgs.partition(" ")
     checkCommand(commandArgs, userArgs)
 
