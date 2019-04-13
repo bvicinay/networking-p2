@@ -1,83 +1,15 @@
 import socket
 import sys
 
-
-print("Remember to Start Your Server")
-print("Enter Client Information Below:")
-print("./ttweetcl <IP ADDRESS> <PORT NUMBER> <USERNAME>")
-
-
-args = input()
-numArgs = len(args)
-
-if numArgs < 4 or numArgs > 4:
-    print("Error: Invalid parameters. Make sure you specify all parameters in the correct format.")
-    exit()
-
-params = {}
-try:
-    params = {"ip": args[1], "port": int(args[2]), "user": args[3]}
-except:
-    print("Error: Invalid parameters. Make sure you specify all parameters in the correct format.")
-
-
-if not (params["user"].isalnum()):
-    exit()
-
-
-
-ipAddr = params["ip"]
-port = params["port"]
-username = params["user"]
-
-#initialize the socket
-soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-#connect to socket
-try:
-    soc.connect((ipAddr, port))
-except:
-    print("Error: Could not establish connection with the server at the address and port specified. Make sure the parameters are valid and that the server is running. ")
-    exit()
-
-size = len(username)
-
-sizeString = str(size)
-
-if (size < 10) :
-
-    sizeString = "00" + sizeString
-
-elif (size < 100) :
-
-    sizeString = "0" + sizeString
-
-msg = bytes(sizeString + "user" + username)
-
-soc.sendall(msg)
-
-isUser = soc.recv(4).decode("utf-8")
-
-if isUser == 'fail' :
-
-    soc.close()
-    exit()
-
-else:
-
-    getCommand()
-
-
-def getCommand() :
+def getCommand():
 
     #get user command
-    userArgs = input()
-    commandArgs = userArgs.partition(" ")
+    userArgs = input("Enter Command")
+    commandArgs = userArgs.split(" ")
     checkCommand(commandArgs, userArgs)
 
-
 #determine what type of command the user recieves
-def checkCommand(commandArgs, userArgs) :
+def checkCommand(commandArgs, userArgs):
 
     if commandArgs[0] == "tweet" :
         tweet(commandArgs, userArgs)
@@ -248,7 +180,7 @@ def timeline(commandArgs, userArgs) :
 
     userTimeline = soc.recv(numBytes).decode("utf-8")
 
-    tweets = userTimeline.partition("+++")
+    tweets = userTimeline.split("+++")
 
     for t in tweets :
 
@@ -265,6 +197,74 @@ def exitServer(commandArgs, userArgs) :
 
     soc.close()
     exit()
+
+
+
+print("Remember to Start Your Server")
+print("Enter Client Information Below:")
+
+
+
+args = sys.argv
+numArgs = len(args)
+
+if numArgs < 4 or numArgs > 4:
+    print("Error: Invalid parameters. Make sure you specify all parameters in the correct format.")
+    exit()
+
+params = {}
+try:
+    params = {"ip": args[1], "port": int(args[2]), "user": args[3]}
+except:
+    print("Error: Invalid parameters. Make sure you specify all parameters in the correct format.")
+
+
+if not (params["user"].isalnum()):
+    exit()
+
+
+
+ipAddr = params["ip"]
+port = params["port"]
+username = params["user"]
+
+#initialize the socket
+soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+#connect to socket
+try:
+    soc.connect((ipAddr, port))
+except:
+    print("Error: Could not establish connection with the server at the address and port specified. Make sure the parameters are valid and that the server is running. ")
+    exit()
+
+size = len(username)
+
+sizeString = str(size)
+
+if (size < 10) :
+
+    sizeString = "00" + sizeString
+
+elif (size < 100) :
+
+    sizeString = "0" + sizeString
+
+msg = bytes(sizeString + "user" + username)
+print("check1")
+soc.sendall(msg)
+print("check2")
+isUser = soc.recv(4).decode("utf-8")
+print("check3")
+if isUser == 'fail' :
+
+    soc.close()
+    exit()
+
+else:
+
+    getCommand()
+
 
 
 
