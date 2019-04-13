@@ -97,6 +97,7 @@ def threadExecute(c):
                     connectedUsers.add(loggedUser)
                     print("User {} logged in succesfully".format(user))
                 else:
+                    sendMessage(c, "true")
                     users[user] = User(user)
                     loggedUser = users[user]
                     state = "standby"
@@ -114,6 +115,7 @@ def threadExecute(c):
                 hashtags[-1] = hashtags[-1].strip()
                 global_tweets.append(Tweet(tweetText, hashtags, loggedUser))
                 state = "standby"
+                print("Received tweet from {}: {} - hashtags: {}".format(loggedUser.username, tweetText, str(hashtags)))
 
             elif state == subscribeFlag:
                 data = str(c.recv(length).decode("utf-8"))[1:].strip()
@@ -157,7 +159,7 @@ def threadExecute(c):
                 print("Received exit signal. Closing connection...")
                 c.close()
                 loggedUser = None
-                thread_lock.release() 
+                break
                 state = "standby"
 
     except (Exception):
