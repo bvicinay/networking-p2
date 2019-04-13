@@ -3,7 +3,7 @@ import sys
 
 
 print("Remember to Start Your Server")
-print("Enter Client Information Below")
+print("Enter Client Information Below:")
 print("./ttweetcl <IP ADDRESS> <PORT NUMBER> <USERNAME>")
 
 
@@ -106,7 +106,10 @@ def tweet(commandArgs, userArgs) :
     messageType = commandArgs[0]
 
     #should be of the form [twee"<message>"+++#...]
-    message = messageType[0:4] + commandArgs[1] + "+++" + commandArgs[2]
+
+    tweetText = commandArgs[1]
+
+    message = messageType[0:4] + tweetText[1:-1] + "+++" + commandArgs[2]
 
     size = len(message) - 4
 
