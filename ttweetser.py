@@ -25,11 +25,12 @@ class Tweet:
     self.owner = owner
 
 class User:
-  def __init__(self, username):
-    self.username = username
-    self.hashtags = []
-    self.lastSeen = 0
-    self.subscribedToAll = False
+
+    def __init__(self, username):
+        self.username = username
+        self.hashtags = []
+        self.lastSeen = 0
+        self.subscribedToAll = False
 
     def subscribe(self, hashtag):
         if len(self.hashtags) >= 3:
@@ -42,7 +43,7 @@ class User:
         else:
             self.hashtags.append(hashtag)
             return True
-    
+
     def unsubscribe(self, hashtag):
         if hashtag == "ALL":
             self.subscribedToAll = False
@@ -68,52 +69,72 @@ def checkUser(user):
 def threadExecute(c):
     try:
         loggedUser = None
-        sendMessage(c, "hello my name is borja")
+        
         state = "standby"
         command = ""
         length = ""
         while True:
             if state == "standby":
-                header = c.recv(7).decode("utf-8")
-                length = int(header[:3])
-                command = header[3:7]
-                state = command
-                sendMessage(c, "hello")
+                header = str(c.recv(7).decode("utf-8"))
+                print("---receivedHeader:" + str(header))
+                if len(str(header).strip()) > 0:
+                    length = int(header[:3])
+                    command = header[3:7]
+                    state = command
+                
 
             if state == connectUserFlag:
-                data = c.recv(length).decode("utf-8")
+                data = str(c.recv(length).decode("utf-8"))
+                print("---received:" + str(data))
                 user = str(data).strip()
-                if checkUser(user):
-                    sendMessage(c, "true")
-                    state = "exit"
-                else:
+                if user in connectedUsers:
                     sendMessage(c, "fail")
-                    users[loggedUser] = User(loggedUser)
+                    state = "exit"
+                elif user in users.keys():
+                    sendMessage(c, "true")
+                    loggedUser = users[user]
                     state = "standby"
+                    connectedUsers.add(loggedUser)
+                    print("User {} logged in succesfully".format(user))
+                else:
+                    users[user] = User(user)
+                    loggedUser = users[user]
+                    state = "standby"
+                    connectedUsers.add(loggedUser)
+                    print("User {} logged in succesfully".format(user))
+
+                
 
             if state == tweetFlag:
-                data = c.recv(length).decode("utf-8")
+                data = str(c.recv(length).decode("utf-8"))
+                print("---received:" + str(data))
                 parts = data.split('+++')
                 tweetText = parts[0].decode("utf-8")
                 hashtags=parts[1].split("#")[1:]
+                hashtags[-1] = hashtags[-1].strip()
                 global_tweets.append(Tweet(tweetText, hashtags, loggedUser))
                 state = "standby"
 
             elif state == subscribeFlag:
-                data = c.recv(length).decode("utf-8")
-                if loggedUser.subscribe(data):
+                data = str(c.recv(length).decode("utf-8"))[1:].strip()
+                print("---received:" + str(data))
+                if loggedUser.subscribe(str(data)):
                     sendMessage(c, "true")
                 else: 
                     sendMessage(c, "fail")
                 state = "standby"
 
             elif state == unsubscribeFlag:
-                data = c.recv(length).decode("utf-8")
+                data = str(c.recv(length).decode("utf-8"))
+                print("---received:" + str(data))
                 loggedUser.unsubscribe(data)
 
                 state = "standby"
                 
             elif state == timelineFlag:
+                
+                
+                
                 newTweets  = global_tweets[loggedUser.lastSeen:]
                 loggedUser.lastseen = len(global_tweets)
                 buffer = ""
@@ -127,14 +148,18 @@ def threadExecute(c):
                             break
                     if not subscribed:
                         continue
-                    buffer += "{} {}: {} {}".format(loggedUser.username, tweet.owner, tweet.text, originHashtag)
-                    sendMessage(c, "wait" + str(len(buffer)))
-                    sendMessage(c, buffer)
-                    state = "standby"
-                    
+                    buffer += "{} {}: {} {}".format(loggedUser.username, tweet.owner.username, tweet.text, "#" + originHashtag)
+                sendMessage(c, "wait" + str(len(buffer)))
+                sendMessage(c, buffer)
+                state = "standby"
+                
             elif state == exitFlag:
+                print("Received exit signal. Closing connection...")
                 c.close()
                 loggedUser = None
+                thread_lock.release() 
+                state = "standby"
+
     except (Exception):
         traceback.print_exc()
         thread_lock.release() 
@@ -144,6 +169,7 @@ def threadExecute(c):
 thread_lock = threading.Lock() 
 
 connections = [] ## (conn, addr, thread)
+connectedUsers = set()
 threads = []
 users = {}
 global_tweets = []
@@ -162,7 +188,7 @@ while True:
         connections.append((conn, addr))
         newThread = thread_lock.acquire()
         threads.append(newThread)
-        print("New client connection established from " + str(addr[1]) + " on port " + str(addr[0]))
+        print("New client connection established from " + str(addr[0]) + " on port " + str(addr[1]))
         
         start_new_thread(threadExecute, (conn,))
         if len(connections) >= 5:
