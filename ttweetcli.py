@@ -4,8 +4,15 @@ import sys
 def getCommand():
 
     #get user command
-    user = raw_input("Enter Command").strip()
+    user = raw_input("Enter Command:  ").strip()
     commandArgs = user.split(" ")
+    if commandArgs[0] == "tweet":
+        raw = user[7:]
+        parts = raw.split('"')
+        text = parts[0]
+        hashtags = parts[1][1:]
+        commandArgs = ["tweet"] + [text] + [hashtags]
+
     checkCommand(commandArgs, user)
 
 #determine what type of command the user recieves
@@ -41,7 +48,7 @@ def tweet(commandArgs, user) :
 
     tweetText = commandArgs[1]
 
-    message = messageType[0:4] + tweetText[1:-1] + "+++" + commandArgs[2]
+    message = messageType[0:4] + '"' + tweetText + '"' + "+++" + commandArgs[2]
 
     size = len(message) - 4
 
@@ -177,16 +184,18 @@ def timeline(commandArgs, user) :
     bytesString = soc.recv(digits).decode("utf-8")
 
     numBytes = int(bytesString)
+    if numBytes > 0:
+        userTimeline = soc.recv(numBytes).decode("utf-8")
 
-    userTimeline = soc.recv(numBytes).decode("utf-8")
+        tweets = userTimeline.split("+++")
 
-    tweets = userTimeline.split("+++")
+        for t in tweets :
 
-    for t in tweets :
+            print(t+"\n")
+    else:
+        print("No tweets")
 
-        print(t)
-
-    # loop back to be able to send new message
+        # loop back to be able to send new message
     getCommand()
 
 def exitServer(commandArgs, user) :

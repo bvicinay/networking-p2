@@ -29,13 +29,14 @@ class User:
     def __init__(self, username):
         self.username = username
         self.hashtags = []
-        self.lastSeen = 0
+        self.lastSeen = 0 ##TODO: only show tweets sent after subscribed
         self.subscribedToAll = False
 
     def subscribe(self, hashtag):
         if len(self.hashtags) >= 3:
-            return True
+            return False
         if hashtag == "ALL":
+            self.hashtags.append(hashtag)
             self.subscribedToAll = True
             return True
         if hashtag in self.hashtags:
@@ -50,16 +51,18 @@ class User:
             return True
         if hashtag in self.hashtags:
             self.hashtags.remove(hashtag)
+            print("Unsubscribed user from " + hashtag)
             return True
+        print("Could not unsubscribe user, not subscribed")
         return False
 
 
 
-def sendMessage(conn, msg):
-    if len(msg) >= 999:
+def sendMessage(conn, msg, addNumbers = True):
+    if not addNumbers:
         conn.sendall(bytes(msg))
         return True
-    size = str(len(msg))
+    size = str(len(msg[4:]))
     size = "0"*(3-len(size)) + size
     conn.sendall(bytes(size + msg))
 
@@ -130,7 +133,7 @@ def threadExecute(c):
                 state = "standby"
 
             elif state == unsubscribeFlag:
-                data = str(c.recv(length).decode("utf-8"))
+                data = str(c.recv(length).decode("utf-8"))[1:]
                 print("---received:" + str(data))
                 loggedUser.unsubscribe(data)
 
@@ -153,9 +156,9 @@ def threadExecute(c):
                             break
                     if not subscribed:
                         continue
-                    buffer += "{} {}: {} {}".format(loggedUser.username, tweet.owner.username, tweet.text, "#" + originHashtag)
-                sendMessage(c, "wait" + str(len(buffer)))
-                sendMessage(c, buffer)
+                    buffer += "+++{} {}: {} {}".format(loggedUser.username, tweet.owner.username, tweet.text, "#" + originHashtag)
+                sendMessage(c, "wait" + str(len(buffer)), True)
+                sendMessage(c, buffer, False)
                 state = "standby"
                 
             elif state == exitFlag:
