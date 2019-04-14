@@ -87,7 +87,7 @@ def threadExecute(c):
             if state == "standby":
                 ##thread_lock.release() 
                 header = str(c.recv(7).decode("utf-8"))
-                print("---receivedHeader:" + str(header))
+                ##print("---receivedHeader:" + str(header))
                 if len(str(header).strip()) > 0:
                     length = int(header[:3])
                     command = header[3:7]
@@ -98,10 +98,14 @@ def threadExecute(c):
 
             if state == connectUserFlag:
                 data = str(c.recv(length).decode("utf-8"))
-                print("---received:" + str(data))
+                ##print("---received:" + str(data))
                 user = str(data).strip()
                 if user in connectedUsers:
                     print("User logged in already")
+                    sendMessage(c, "fail")
+                    state = "exit"
+                elif len(connectedUsers) > 4:
+                    print("Parallel connections limit exceeded, dropping new user")
                     sendMessage(c, "fail")
                     state = "exit"
                 elif user in users.keys():
@@ -115,14 +119,14 @@ def threadExecute(c):
                     users[user] = User(user)
                     loggedUser = users[user]
                     state = "standby"
-                    connectedUsers.add(loggedUser)
+                    connectedUsers.add(loggedUser.username)
                     print("User {} logged in succesfully".format(user))
 
                 
 
             if state == tweetFlag:
                 data = str(c.recv(length).decode("utf-8"))
-                print("---received:" + str(data))
+                #print("---received:" + str(data))
                 parts = data.split('+++')
                 tweetText = parts[0].decode("utf-8")
                 hashtags=parts[1].split("#")[1:]
@@ -133,7 +137,7 @@ def threadExecute(c):
 
             elif state == subscribeFlag:
                 data = str(c.recv(length).decode("utf-8"))[1:].strip()
-                print("---received:" + str(data))
+                #print("---received:" + str(data))
                 if loggedUser.subscribe(str(data)):
                     sendMessage(c, "true")
                     print("Subscribed {} to {} succesfully".format(loggedUser.username, str(data)))
@@ -176,14 +180,17 @@ def threadExecute(c):
                 print("Received exit signal. Closing connection...")
                 c.close()
                 loggedUser = None
-                connectedUsers.pop(loggedUser.username)
+                try:
+                    connectedUsers.pop(loggedUser.username)
+                except:
+                    pass ## duplicate client connection
                 thread_lock.release() 
                 break
                 state = "standby"
 
     except (Exception):
         traceback.print_exc()
-        thread_lock.release() 
+        
         allowNew = True
         print("Disconnected from client, killing thread..")
 
