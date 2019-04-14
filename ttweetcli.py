@@ -4,23 +4,23 @@ import sys
 def getCommand():
 
     #get user command
-    userArgs = input("Enter Command")
-    commandArgs = userArgs.split(" ")
-    checkCommand(commandArgs, userArgs)
+    user = raw_input("Enter Command").strip()
+    commandArgs = user.split(" ")
+    checkCommand(commandArgs, user)
 
 #determine what type of command the user recieves
-def checkCommand(commandArgs, userArgs):
+def checkCommand(commandArgs, user):
 
     if commandArgs[0] == "tweet" :
-        tweet(commandArgs, userArgs)
+        tweet(commandArgs, user)
     elif commandArgs[0] == "subscribe" :
-        subscribe(commandArgs, userArgs)
+        subscribe(commandArgs, user)
     elif commandArgs[0] == "unsubscribe" :
-        unsubscribe(commandArgs, userArgs)
+        unsubscribe(commandArgs, user)
     elif commandArgs[0] == "timeline" :
         timeline(commandArgs, commandArgs)
     elif commandArgs[0] == "exit" :
-        exitServer(commandArgs, userArgs)
+        exitServer(commandArgs, user)
     else :
         print("Error: Invalid Command")
         #handle invalid command
@@ -28,7 +28,7 @@ def checkCommand(commandArgs, userArgs):
 
 
 
-def tweet(commandArgs, userArgs) :
+def tweet(commandArgs, user) :
 
     #do error handling
 
@@ -68,7 +68,7 @@ def tweet(commandArgs, userArgs) :
     getCommand()
 
 
-def subscribe(commandArgs, userArgs) :
+def subscribe(commandArgs, user) :
 
     #do error handling
 
@@ -95,9 +95,9 @@ def subscribe(commandArgs, userArgs) :
     # sends the message to the server
     soc.sendall(msg)
 
-    success = soc.recv(4).decode("utf-8")
+    success = soc.recv(7).decode("utf-8")
 
-    if (success == "true"):
+    if (success[3:7] == "true"):
 
         print("Subscribed To Hashtag")
 
@@ -108,7 +108,7 @@ def subscribe(commandArgs, userArgs) :
     # loop back to be able to send new message
     getCommand()
 
-def unsubscribe(commandArgs, userArgs) :
+def unsubscribe(commandArgs, user) :
 
     # do error handling
 
@@ -142,7 +142,7 @@ def unsubscribe(commandArgs, userArgs) :
     # loop back to be able to send new message
     getCommand()
 
-def timeline(commandArgs, userArgs) :
+def timeline(commandArgs, user) :
     # do error handling
 
     # get the size and set the message as "size" + message
@@ -189,7 +189,7 @@ def timeline(commandArgs, userArgs) :
     # loop back to be able to send new message
     getCommand()
 
-def exitServer(commandArgs, userArgs) :
+def exitServer(commandArgs, user) :
 
     msg = bytes("000exit")
 
@@ -254,9 +254,9 @@ msg = bytes(sizeString + "user" + username)
 print("check1")
 soc.sendall(msg)
 print("check2")
-isUser = soc.recv(4).decode("utf-8")
+isUser = soc.recv(7).decode("utf-8")
 print("check3")
-if isUser == 'fail' :
+if isUser[3:7] == 'fail' :
 
     soc.close()
     exit()
