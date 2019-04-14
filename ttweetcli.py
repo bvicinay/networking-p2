@@ -51,6 +51,7 @@ def tweet(commandArgs, user) :
     if numHash > 8 :
 
         print("There are too many hashtags")
+        getCommand()
 
     testHash = hashtags.replace("#", "")
 
@@ -67,7 +68,9 @@ def tweet(commandArgs, user) :
     testHash = hashtags[1:].split("#")
 
     for tag in testHash :
-
+        if tag == '':
+            print("Invalid hashtags")
+            getCommand()
         if len(tag) > 25 :
 
             print("One or more of your hashtags is too long")
@@ -77,6 +80,7 @@ def tweet(commandArgs, user) :
 
             print("You do not have permission to tweet to ALL")
             getCommand()
+
 
     if not hashtags[0:1] == "#" :
 
