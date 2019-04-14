@@ -18,11 +18,17 @@ if len(args) < 2:
 
 port = int(sys.argv[1])
 
+
 class Tweet:
-  def __init__(self, text, hashtags, owner):
-    self.text = text
-    self.hashtags = hashtags
-    self.owner = owner
+
+    currNumber = 0
+
+    def __init__(self, text, hashtags, owner):
+        self.text = text
+        self.hashtags = hashtags
+        self.owner = owner
+        self.time = Tweet.currNumber
+        Tweet.currNumber += 1
 
 class User:
 
@@ -31,19 +37,20 @@ class User:
         self.hashtags = []
         self.lastSeen = 0 ##TODO: only show tweets sent after subscribed
         self.subscribedToAll = False
+        self.subscriptions = {}
 
     def subscribe(self, hashtag):
         if len(self.hashtags) >= 3:
             return False
-        if hashtag == "ALL":
-            self.hashtags.append(hashtag)
-            self.subscribedToAll = True
-            return True
         if hashtag in self.hashtags:
             return True
-        else:
-            self.hashtags.append(hashtag)
-            return True
+        
+        self.hashtags.append(hashtag)
+        if hashtag == "ALL":
+            self.subscribedToAll = True
+        
+        self.subscriptions[hashtag] = Tweet.currNumber
+        return True
 
     def unsubscribe(self, hashtag):
         if hashtag == "ALL":
@@ -78,12 +85,15 @@ def threadExecute(c):
         length = ""
         while True:
             if state == "standby":
+                ##thread_lock.release() 
                 header = str(c.recv(7).decode("utf-8"))
                 print("---receivedHeader:" + str(header))
                 if len(str(header).strip()) > 0:
                     length = int(header[:3])
                     command = header[3:7]
                     state = command
+                else:
+                    raise Exception
                 
 
             if state == connectUserFlag:
@@ -91,13 +101,14 @@ def threadExecute(c):
                 print("---received:" + str(data))
                 user = str(data).strip()
                 if user in connectedUsers:
+                    print("User logged in already")
                     sendMessage(c, "fail")
                     state = "exit"
                 elif user in users.keys():
                     sendMessage(c, "true")
                     loggedUser = users[user]
                     state = "standby"
-                    connectedUsers.add(loggedUser)
+                    connectedUsers.add(loggedUser.username)
                     print("User {} logged in succesfully".format(user))
                 else:
                     sendMessage(c, "true")
@@ -144,13 +155,13 @@ def threadExecute(c):
                 
                 
                 newTweets  = global_tweets[loggedUser.lastSeen:]
-                loggedUser.lastseen = len(global_tweets)
+                loggedUser.lastSeen = len(global_tweets)
                 buffer = ""
                 for tweet in newTweets:
                     subscribed = False
                     originHashtag = None
                     for h in tweet.hashtags:
-                        if (h in loggedUser.hashtags) or loggedUser.subscribedToAll:
+                        if (h in loggedUser.hashtags) or loggedUser.subscribedToAll and tweet.time >= loggedUser.subscriptions[h]:
                             subscribed = True
                             originHashtag = h
                             break
@@ -165,6 +176,8 @@ def threadExecute(c):
                 print("Received exit signal. Closing connection...")
                 c.close()
                 loggedUser = None
+                connectedUsers.pop(loggedUser.username)
+                thread_lock.release() 
                 break
                 state = "standby"
 
@@ -194,8 +207,8 @@ while True:
         print("Listening on port " + str(port))
         conn, addr = s.accept()
         connections.append((conn, addr))
-        newThread = thread_lock.acquire()
-        threads.append(newThread)
+        ##newThread = thread_lock.acquire()
+        ##threads.append(newThread)
         print("New client connection established from " + str(addr[0]) + " on port " + str(addr[1]))
         
         start_new_thread(threadExecute, (conn,))
