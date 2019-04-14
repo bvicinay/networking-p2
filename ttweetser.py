@@ -122,8 +122,11 @@ def threadExecute(c):
                 print("---received:" + str(data))
                 if loggedUser.subscribe(str(data)):
                     sendMessage(c, "true")
+                    print("Subscribed {} to {} succesfully".format(loggedUser.username, str(data)))
                 else: 
                     sendMessage(c, "fail")
+                    print("Could not subscribe {} to {}".format(loggedUser.username, str(data)))
+                
                 state = "standby"
 
             elif state == unsubscribeFlag:
